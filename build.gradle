@@ -1,0 +1,36 @@
+group = 'org.codeartisans.gradle'
+version = '0.3'
+ext.pluginId = 'org.codeartisans.gradle.wsdl-tasks'
+
+apply plugin: 'groovy'
+apply plugin: 'java-gradle-plugin'
+
+repositories {
+  jcenter()
+}
+
+dependencies {
+  compileOnly 'com.sun.xml.ws:jaxws-tools:2.2.10'
+
+  implementation gradleApi()
+}
+
+gradlePlugin {
+  plugins {
+    wsdlPlugin {
+      id = pluginId
+      implementationClass = 'org.codeartisans.gradle.wsdl.WsdlTasksPlugin'
+    }
+  }
+}
+
+testing {
+    suites {
+        test {
+            useSpock()
+            dependencies {
+                //implementation 'org.junit.jupiter:junit-jupiter-params:5.9.2'
+            }
+        }
+    }
+}
