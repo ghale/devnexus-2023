@@ -13,6 +13,7 @@ dependencies {
   compileOnly 'com.sun.xml.ws:jaxws-tools:2.2.10'
 
   implementation gradleApi()
+  testImplementation 'commons-io:commons-io:2.11.0'
 }
 
 gradlePlugin {

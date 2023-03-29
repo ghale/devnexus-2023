@@ -1,12 +1,13 @@
 package org.codeartisans.gradle.wsdl;
 
+import java.io.File;
 import java.io.Serializable;
 import org.gradle.api.Named;
 
 public class Wsdl implements Named, Serializable {
 
     private String name;
-    private Object wsdl;
+    private File wsdl;
     private String packageName;
 
     public Wsdl() {}
@@ -24,11 +25,11 @@ public class Wsdl implements Named, Serializable {
         this.name = name;
     }
 
-    public Object getWsdl() {
+    public File getWsdl() {
         return wsdl;
     }
 
-    public void setWsdl( Object wsdl ) {
+    public void setWsdl( File wsdl ) {
         this.wsdl = wsdl;
     }
 

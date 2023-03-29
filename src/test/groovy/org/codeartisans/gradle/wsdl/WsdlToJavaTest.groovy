@@ -1,5 +1,6 @@
 package org.codeartisans.gradle.wsdl
 
+import org.apache.commons.io.FileUtils
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome
 import spock.lang.Specification
@@ -8,6 +9,8 @@ import spock.lang.TempDir
 class WsdlToJavaTest extends Specification {
     @TempDir
     File testProjectDir
+    @TempDir
+    File alternateProjectDir
     File buildFile
 
     def setup() {
@@ -16,6 +19,7 @@ class WsdlToJavaTest extends Specification {
             import org.codeartisans.gradle.wsdl.*
             
             plugins {
+              id "base"
               id "de.undercouch.download" version "5.4.0"
               id "org.codeartisans.gradle.wsdl-tasks"
             }
@@ -132,5 +136,89 @@ class WsdlToJavaTest extends Specification {
 
         and:
         result.output.contains("Reusing configuration cache.")
+    }
+
+    def "build cache: reuses outputs when inputs have not changed"() {
+        when:
+        def result = GradleRunner.create()
+                .withProjectDir(testProjectDir)
+                .withArguments('wsdlToJava', '--stacktrace', '--build-cache', '-Dorg.gradle.caching.debug=true')
+                .withPluginClasspath()
+                .forwardOutput()
+                .build()
+
+        then:
+        result.task(":wsdlToJava").outcome == TaskOutcome.SUCCESS
+
+        when:
+        result = GradleRunner.create()
+                .withProjectDir(testProjectDir)
+                .withArguments('clean', 'wsdlToJava', '--stacktrace', '--build-cache', '-Dorg.gradle.caching.debug=true')
+                .withPluginClasspath()
+                .forwardOutput()
+                .build()
+
+        then:
+        result.task(":wsdlToJava").outcome == TaskOutcome.FROM_CACHE
+    }
+
+    def "build cache: relocated build reuses outputs when inputs have not changed"() {
+        when:
+        def result = GradleRunner.create()
+                .withProjectDir(testProjectDir)
+                .withArguments('wsdlToJava', '--stacktrace', '--build-cache', '-Dorg.gradle.caching.debug=true')
+                .withPluginClasspath()
+                .forwardOutput()
+                .build()
+
+        then:
+        result.task(":wsdlToJava").outcome == TaskOutcome.SUCCESS
+
+        when:
+        FileUtils.copyDirectory(testProjectDir, alternateProjectDir)
+        result = GradleRunner.create()
+                .withProjectDir(alternateProjectDir)
+                .withArguments('clean', 'wsdlToJava', '--stacktrace', '--build-cache', '-Dorg.gradle.caching.debug=true')
+                .withPluginClasspath()
+                .forwardOutput()
+                .build()
+
+        then:
+        result.task(":wsdlToJava").outcome == TaskOutcome.FROM_CACHE
+    }
+
+    def "build cache: does not reuse outputs when inputs do change"() {
+        when:
+        def result = GradleRunner.create()
+                .withProjectDir(testProjectDir)
+                .withArguments('wsdlToJava', '--stacktrace', '--build-cache')
+                .withPluginClasspath()
+                .forwardOutput()
+                .build()
+
+        then:
+        result.task(":wsdlToJava").outcome == TaskOutcome.SUCCESS
+
+        buildFile << """
+            tasks.named('wsdlToJava') {
+              wsdls {
+                pingPong2 {
+                  wsdl = file(downloadWsdl.dest)
+                  packageName = 'ping.pong2'
+                }
+              }
+            }
+        """
+
+        when:
+        result = GradleRunner.create()
+                .withProjectDir(testProjectDir)
+                .withArguments('clean', 'wsdlToJava', '--stacktrace', '--build-cache')
+                .withPluginClasspath()
+                .forwardOutput()
+                .build()
+
+        then:
+        result.task(":wsdlToJava").outcome == TaskOutcome.SUCCESS
     }
 }

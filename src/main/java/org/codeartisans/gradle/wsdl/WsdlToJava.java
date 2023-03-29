@@ -20,7 +20,7 @@ import org.gradle.workers.WorkerExecutor;
 
 public abstract class WsdlToJava extends DefaultTask {
     private Configuration jaxwsToolsConfiguration;
-    private final NamedDomainObjectContainer<Wsdl> wsdls = getObjectFactory().domainObjectContainer(Wsdl.class);
+    private final NamedDomainObjectContainer<Wsdl> wsdls = getProject().getObjects().domainObjectContainer(Wsdl.class);
 
     @InputFiles
     public Configuration getJaxwsToolsConfiguration() {
@@ -57,15 +57,13 @@ public abstract class WsdlToJava extends DefaultTask {
     }
 
     private List<String> wsImportArgumentsFor( Wsdl wsdl ) {
-        File wsdlFile = getProject().file( wsdl.getWsdl() );
-
         List<String> arguments = new ArrayList<>();
         if( wsdl.getPackageName() != null ) {
             arguments.add( "-p" );
             arguments.add( wsdl.getPackageName() );
         }
         arguments.add( "-wsdllocation" );
-        arguments.add( wsdlFile.getName() );
+        arguments.add( wsdl.getWsdl().getName() );
         arguments.add( "-s" );
         arguments.add(getOutputDirectory().getAsFile().get().getAbsolutePath() );
         arguments.add( "-extension" );
@@ -75,13 +73,10 @@ public abstract class WsdlToJava extends DefaultTask {
         } else {
             arguments.add( "-quiet" );
         }
-        arguments.add( wsdlFile.getAbsolutePath() );
+        arguments.add( wsdl.getWsdl().getAbsolutePath() );
         return arguments;
     }
 
     @Inject
     protected abstract WorkerExecutor getWorkerExecutor();
-
-    @Inject
-    protected abstract ObjectFactory getObjectFactory();
 }
