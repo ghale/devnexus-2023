@@ -28,12 +28,7 @@ class WsdlToJavaTest extends Specification {
               src "https://raw.githubusercontent.com/arktekk/sbt-cxf-example/master/src/main/wsdl/PingPong.wsdl"
               dest "\$buildDir/wsdls/PingPong.wsdl"
             }
-        """
-    }
 
-    def "generates sources for a single ping-pong wsdl"() {
-        given:
-        buildFile << """
             tasks.named('wsdlToJava') {
               dependsOn downloadWsdl
               wsdls {
@@ -44,7 +39,9 @@ class WsdlToJavaTest extends Specification {
               }
             }
         """.stripIndent()
+    }
 
+    def "generates sources for a single ping-pong wsdl"() {
         when:
         def result = GradleRunner.create()
                 .withProjectDir(testProjectDir)
@@ -62,16 +59,6 @@ class WsdlToJavaTest extends Specification {
 
     def "task avoidance: does not create wsdl tasks when none are requested"() {
         buildFile << """
-            tasks.named('wsdlToJava') {
-              dependsOn downloadWsdl
-              wsdls {
-                pingPong {
-                  wsdl = file(downloadWsdl.dest)
-                  packageName = 'ping.pong'
-                }
-              }
-            }
-            
             tasks.configureEach { task ->
                 println "CREATED: \${task.name}"
             }
@@ -92,16 +79,6 @@ class WsdlToJavaTest extends Specification {
 
     def "task avoidance: only creates the wsdl tasks that are requested"() {
         buildFile << """
-            tasks.named('wsdlToJava') {
-              dependsOn downloadWsdl
-              wsdls {
-                pingPong {
-                  wsdl = file(downloadWsdl.dest)
-                  packageName = 'ping.pong'
-                }
-              }
-            }
-            
             tasks.register('anotherWsdlToJava', WsdlToJava) {
               dependsOn downloadWsdl
               wsdls {
@@ -128,5 +105,32 @@ class WsdlToJavaTest extends Specification {
         then:
         result.output.contains("CREATED: wsdlToJava")
         !result.output.contains("CREATED: anotherWsdlToJava")
+    }
+
+    def "configuration cache: reuses configuration cache when build is not changed"() {
+        when:
+        def result = GradleRunner.create()
+                .withProjectDir(testProjectDir)
+                .withArguments('wsdlToJava', '--stacktrace', '--configuration-cache')
+                .withPluginClasspath()
+                .forwardOutput()
+                .build()
+
+        then:
+        result.task(":wsdlToJava").outcome == TaskOutcome.SUCCESS
+
+        when:
+        result = GradleRunner.create()
+                .withProjectDir(testProjectDir)
+                .withArguments('wsdlToJava', '--stacktrace', '--configuration-cache')
+                .withPluginClasspath()
+                .forwardOutput()
+                .build()
+
+        then:
+        result.task(":wsdlToJava").outcome == TaskOutcome.UP_TO_DATE
+
+        and:
+        result.output.contains("Reusing configuration cache.")
     }
 }
