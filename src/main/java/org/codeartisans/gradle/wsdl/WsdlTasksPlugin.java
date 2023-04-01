@@ -1,10 +1,8 @@
 package org.codeartisans.gradle.wsdl;
 
 import java.io.File;
-import org.gradle.api.Action;
-import org.gradle.api.Plugin;
-import org.gradle.api.Project;
-import org.gradle.api.Task;
+
+import org.gradle.api.*;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.model.ObjectFactory;
@@ -29,13 +27,13 @@ public abstract class WsdlTasksPlugin implements Plugin<Project> {
         project.getDependencies().add( "jaxwsTools", JAXWSTOOLS_LIBRARY);
 
         // Create a conventional wsdlToJava task in the project
-        WsdlToJava wsdlToJava = project.getTasks().create("wsdlToJava", WsdlToJava.class, task -> {
+        TaskProvider<WsdlToJava> wsdlToJava = project.getTasks().register("wsdlToJava", WsdlToJava.class, task -> {
                     task.setGroup("wsdl");
                     task.setDescription("Generate Java classes from WSDL");
         });
 
         // For every WsdlToJava task, set a conventional output directory and use the default jaxwsTools configuration
-        project.getTasks().withType(WsdlToJava.class, task -> {
+        project.getTasks().withType(WsdlToJava.class).configureEach(task -> {
             DirectoryProperty defaultOutputDirectory = getObjectFactory().directoryProperty();
             defaultOutputDirectory.set(new File( project.getBuildDir(),
                     "generated-sources/" + task.getName() + "/java" ));
@@ -47,7 +45,7 @@ public abstract class WsdlTasksPlugin implements Plugin<Project> {
         // Add the wsdlToJava output directory to the main source set
         project.getPluginManager().withPlugin("java", appliedPlugin -> {
             SourceSetContainer sourceSets = project.getExtensions().getByType(SourceSetContainer.class);
-            sourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME).getJava().srcDir(wsdlToJava.getOutputDirectory());
+            sourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME).getJava().srcDir(wsdlToJava.map(WsdlToJava::getOutputDirectory));
             String implementationConfigurationName = sourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME).getImplementationConfigurationName();
             project.getConfigurations().getByName(implementationConfigurationName).extendsFrom(jaxWsTools);
         });
