@@ -39,7 +39,7 @@ public abstract class WsdlTasksPlugin implements Plugin<Project> {
                     "generated-sources/" + task.getName() + "/java" ));
             task.getOutputDirectory().convention(defaultOutputDirectory);
 
-            task.setJaxwsToolsConfiguration( jaxWsTools);
+            task.getJaxwsToolsConfiguration().from( jaxWsTools);
         });
 
         // Add the wsdlToJava output directory to the main source set

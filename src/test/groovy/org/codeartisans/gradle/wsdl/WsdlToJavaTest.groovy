@@ -14,6 +14,15 @@ class WsdlToJavaTest extends Specification {
     File buildFile
 
     def setup() {
+        new File(testProjectDir, 'settings.gradle') << """
+            rootProject.name = 'test-project'
+            buildCache {
+                local {
+                    directory = new File(rootDir, 'build-cache')
+                }
+            }
+        """.stripIndent()
+
         buildFile = new File(testProjectDir, 'build.gradle') << """
             import de.undercouch.gradle.tasks.download.Download
             import org.codeartisans.gradle.wsdl.*

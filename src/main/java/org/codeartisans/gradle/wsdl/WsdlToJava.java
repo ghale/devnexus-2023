@@ -8,42 +8,24 @@ import org.gradle.api.DefaultTask;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DirectoryProperty;
-import org.gradle.api.file.FileCollection;
-import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.tasks.*;
 import org.gradle.workers.WorkQueue;
 import org.gradle.workers.WorkerExecutor;
 
+@CacheableTask
 public abstract class WsdlToJava extends DefaultTask {
-    private FileCollection jaxwsToolsConfiguration;
-
-    @InputFiles
-    public FileCollection getJaxwsToolsConfiguration() {
-        return jaxwsToolsConfiguration;
-    }
-
-    public void setJaxwsToolsConfiguration( FileCollection jaxwsToolsConfiguration ) {
-        this.jaxwsToolsConfiguration = jaxwsToolsConfiguration;
-    }
+    @Classpath
+    abstract public ConfigurableFileCollection getJaxwsToolsConfiguration();
 
     @Nested
     abstract public NamedDomainObjectContainer<Wsdl> getWsdls();
-
-    @InputFiles
-    public FileCollection getWsdlFiles() {
-        ConfigurableFileCollection wsdlFiles = getObjectFactory().fileCollection();
-        for( Wsdl wsdl : getWsdls() ) {
-            wsdlFiles.from( wsdl.getWsdl() );
-        }
-        return wsdlFiles;
-    }
 
     @OutputDirectory
     abstract public DirectoryProperty getOutputDirectory();
 
     @TaskAction
     public void processWsdls() {
-        WorkQueue queue = getWorkerExecutor().classLoaderIsolation(spec -> spec.getClasspath().from(jaxwsToolsConfiguration));
+        WorkQueue queue = getWorkerExecutor().classLoaderIsolation(spec -> spec.getClasspath().from(getJaxwsToolsConfiguration()));
         getWsdls().forEach(wsdl ->
             queue.submit(WsImportWorkAction.class,
                     wsImportParameters -> wsImportParameters.getArguments().addAll(wsImportArgumentsFor(wsdl))));
@@ -74,7 +56,4 @@ public abstract class WsdlToJava extends DefaultTask {
 
     @Inject
     protected abstract WorkerExecutor getWorkerExecutor();
-
-    @Inject
-    protected abstract ObjectFactory getObjectFactory();
 }
