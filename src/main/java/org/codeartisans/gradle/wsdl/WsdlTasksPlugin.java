@@ -17,6 +17,8 @@ import javax.inject.Inject;
 
 public abstract class WsdlTasksPlugin implements Plugin<Project> {
 
+    public static final String JAXWSTOOLS_LIBRARY = "com.sun.xml.ws:jaxws-tools:2.2.10";
+
     @Inject
     protected abstract ObjectFactory getObjectFactory();
 
@@ -24,7 +26,7 @@ public abstract class WsdlTasksPlugin implements Plugin<Project> {
     public void apply(Project project) {
 
         Configuration jaxWsTools = project.getConfigurations().create( "jaxwsTools" );
-        project.getDependencies().add( "jaxwsTools", "com.sun.xml.ws:jaxws-tools:2.2.10" );
+        project.getDependencies().add( "jaxwsTools", JAXWSTOOLS_LIBRARY);
 
         // Create a conventional wsdlToJava task in the project
         WsdlToJava wsdlToJava = project.getTasks().create("wsdlToJava", WsdlToJava.class, task -> {
@@ -46,6 +48,8 @@ public abstract class WsdlTasksPlugin implements Plugin<Project> {
         project.getPluginManager().withPlugin("java", appliedPlugin -> {
             SourceSetContainer sourceSets = project.getExtensions().getByType(SourceSetContainer.class);
             sourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME).getJava().srcDir(wsdlToJava.getOutputDirectory());
+            String implementationConfigurationName = sourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME).getImplementationConfigurationName();
+            project.getConfigurations().getByName(implementationConfigurationName).extendsFrom(jaxWsTools);
         });
     }
 }

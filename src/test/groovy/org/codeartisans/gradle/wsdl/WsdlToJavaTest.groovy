@@ -19,7 +19,7 @@ class WsdlToJavaTest extends Specification {
             import org.codeartisans.gradle.wsdl.*
             
             plugins {
-              id "base"
+              id "java"
               id "de.undercouch.download" version "5.4.0"
               id "org.codeartisans.gradle.wsdl-tasks"
             }
@@ -45,11 +45,11 @@ class WsdlToJavaTest extends Specification {
         """.stripIndent()
     }
 
-    def "generates sources for a single ping-pong wsdl"() {
+    def "functional: generates and compiles sources for a single ping-pong wsdl"() {
         when:
         def result = GradleRunner.create()
                 .withProjectDir(testProjectDir)
-                .withArguments('wsdlToJava', '--stacktrace')
+                .withArguments('build', '--stacktrace')
                 .withPluginClasspath()
                 .forwardOutput()
                 .build()
@@ -59,6 +59,7 @@ class WsdlToJavaTest extends Specification {
 
         and:
         new File(testProjectDir, "build/generated-sources/wsdlToJava/java/ping/pong/PingPongService.java").isFile()
+        new File(testProjectDir, "build/classes/java/main/ping/pong/PingPong.class").isFile()
     }
 
     def "task avoidance: does not create wsdl tasks when none are requested"() {
