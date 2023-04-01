@@ -7,6 +7,8 @@ import spock.lang.Specification
 import spock.lang.TempDir
 
 class WsdlToJavaTest extends Specification {
+    private static final String[] GRADLE_VERSIONS = ['7.6.1', '8.0.2']
+
     @TempDir
     File testProjectDir
     @TempDir
@@ -57,6 +59,7 @@ class WsdlToJavaTest extends Specification {
     def "functional: generates and compiles sources for a single ping-pong wsdl"() {
         when:
         def result = GradleRunner.create()
+                .withGradleVersion(gradleVersion as String)
                 .withProjectDir(testProjectDir)
                 .withArguments('build', '--stacktrace')
                 .withPluginClasspath()
@@ -69,6 +72,9 @@ class WsdlToJavaTest extends Specification {
         and:
         new File(testProjectDir, "build/generated-sources/wsdlToJava/java/ping/pong/PingPongService.java").isFile()
         new File(testProjectDir, "build/classes/java/main/ping/pong/PingPong.class").isFile()
+
+        where:
+        gradleVersion << GRADLE_VERSIONS
     }
 
     def "task avoidance: does not create wsdl tasks when none are requested"() {
@@ -80,6 +86,7 @@ class WsdlToJavaTest extends Specification {
 
         when:
         def result = GradleRunner.create()
+                .withGradleVersion(gradleVersion as String)
                 .withProjectDir(testProjectDir)
                 .withArguments('help')
                 .withPluginClasspath()
@@ -89,6 +96,9 @@ class WsdlToJavaTest extends Specification {
         then:
         result.output.contains("CREATED: help")
         !result.output.contains("CREATED: wsdlToJava")
+
+        where:
+        gradleVersion << GRADLE_VERSIONS
     }
 
     def "task avoidance: only creates the wsdl tasks that are requested"() {
@@ -110,6 +120,7 @@ class WsdlToJavaTest extends Specification {
 
         when:
         def result = GradleRunner.create()
+                .withGradleVersion(gradleVersion as String)
                 .withProjectDir(testProjectDir)
                 .withArguments('wsdlToJava', '--stacktrace')
                 .withPluginClasspath()
@@ -119,11 +130,15 @@ class WsdlToJavaTest extends Specification {
         then:
         result.output.contains("CREATED: wsdlToJava")
         !result.output.contains("CREATED: anotherWsdlToJava")
+
+        where:
+        gradleVersion << GRADLE_VERSIONS
     }
 
     def "configuration cache: reuses configuration cache when build is not changed"() {
         when:
         def result = GradleRunner.create()
+                .withGradleVersion(gradleVersion as String)
                 .withProjectDir(testProjectDir)
                 .withArguments('wsdlToJava', '--stacktrace', '--configuration-cache')
                 .withPluginClasspath()
@@ -135,6 +150,7 @@ class WsdlToJavaTest extends Specification {
 
         when:
         result = GradleRunner.create()
+                .withGradleVersion(gradleVersion as String)
                 .withProjectDir(testProjectDir)
                 .withArguments('wsdlToJava', '--stacktrace', '--configuration-cache')
                 .withPluginClasspath()
@@ -146,11 +162,15 @@ class WsdlToJavaTest extends Specification {
 
         and:
         result.output.contains("Reusing configuration cache.")
+
+        where:
+        gradleVersion << GRADLE_VERSIONS
     }
 
     def "build cache: reuses outputs when inputs have not changed"() {
         when:
         def result = GradleRunner.create()
+                .withGradleVersion(gradleVersion as String)
                 .withProjectDir(testProjectDir)
                 .withArguments('wsdlToJava', '--stacktrace', '--build-cache', '-Dorg.gradle.caching.debug=true')
                 .withPluginClasspath()
@@ -162,6 +182,7 @@ class WsdlToJavaTest extends Specification {
 
         when:
         result = GradleRunner.create()
+                .withGradleVersion(gradleVersion as String)
                 .withProjectDir(testProjectDir)
                 .withArguments('clean', 'wsdlToJava', '--stacktrace', '--build-cache', '-Dorg.gradle.caching.debug=true')
                 .withPluginClasspath()
@@ -170,11 +191,15 @@ class WsdlToJavaTest extends Specification {
 
         then:
         result.task(":wsdlToJava").outcome == TaskOutcome.FROM_CACHE
+
+        where:
+        gradleVersion << GRADLE_VERSIONS
     }
 
     def "build cache: relocated build reuses outputs when inputs have not changed"() {
         when:
         def result = GradleRunner.create()
+                .withGradleVersion(gradleVersion as String)
                 .withProjectDir(testProjectDir)
                 .withArguments('wsdlToJava', '--stacktrace', '--build-cache', '-Dorg.gradle.caching.debug=true')
                 .withPluginClasspath()
@@ -187,6 +212,7 @@ class WsdlToJavaTest extends Specification {
         when:
         FileUtils.copyDirectory(testProjectDir, alternateProjectDir)
         result = GradleRunner.create()
+                .withGradleVersion(gradleVersion as String)
                 .withProjectDir(alternateProjectDir)
                 .withArguments('clean', 'wsdlToJava', '--stacktrace', '--build-cache', '-Dorg.gradle.caching.debug=true')
                 .withPluginClasspath()
@@ -195,11 +221,15 @@ class WsdlToJavaTest extends Specification {
 
         then:
         result.task(":wsdlToJava").outcome == TaskOutcome.FROM_CACHE
+
+        where:
+        gradleVersion << GRADLE_VERSIONS
     }
 
     def "build cache: does not reuse outputs when inputs do change"() {
         when:
         def result = GradleRunner.create()
+                .withGradleVersion(gradleVersion as String)
                 .withProjectDir(testProjectDir)
                 .withArguments('wsdlToJava', '--stacktrace', '--build-cache')
                 .withPluginClasspath()
@@ -222,6 +252,7 @@ class WsdlToJavaTest extends Specification {
 
         when:
         result = GradleRunner.create()
+                .withGradleVersion(gradleVersion as String)
                 .withProjectDir(testProjectDir)
                 .withArguments('clean', 'wsdlToJava', '--stacktrace', '--build-cache')
                 .withPluginClasspath()
@@ -230,5 +261,8 @@ class WsdlToJavaTest extends Specification {
 
         then:
         result.task(":wsdlToJava").outcome == TaskOutcome.SUCCESS
+
+        where:
+        gradleVersion << GRADLE_VERSIONS
     }
 }
